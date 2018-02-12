@@ -43,6 +43,22 @@ export default new Vuex.Store({
         category: 'eye',
         src: 'are'
       },
+      {
+        category: 'head',
+        src: 'are'
+      },
+      {
+        category: 'hair',
+        src: 'are'
+      },
+      {
+        category: 'eye',
+        src: 'are'
+      },
+      {
+        category: 'head',
+        src: 'are'
+      }
     ],
     partsCategory: [],
     step: 1,

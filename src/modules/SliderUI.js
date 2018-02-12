@@ -44,8 +44,10 @@ export default class SliderUI {
     // 1回のスライドでスライドする数
     this.slidesPerGroup = options.slidesPerGroup;
 
-    // スライド1つのwidth
+    // 1つのスライドのwidth
     this.widthPerSlide = 0;
+
+    this.maxIndex = Math.ceil(this.slidesCount / this.slidesPerGroup - 1);
 
     // イベントハンドラ
     this.handleTouchStart = this.handleTouchStart.bind(this);
@@ -63,9 +65,13 @@ export default class SliderUI {
   update() {
     this.slideEl = this.el.querySelectorAll('.slider-slide');
     this.slidesCount = this.slideEl.length;
+    this.maxIndex = Math.ceil(this.slidesCount / this.slidesPerGroup - 1);
     this.updateSlideWidth();
   }
 
+  /**
+   * スライダー全体のwidthに基づいてスライドのwidthを更新する
+   */
   updateSlideWidth() {
     this.widthPerSlide = this.el.offsetWidth / this.slidesPerView;
 
@@ -74,6 +80,9 @@ export default class SliderUI {
     });
   }
 
+  /**
+   * イベントリスナを追加する
+   */
   addEvent() {
     this.wrapperEl.addEventListener('touchstart', this.handleTouchStart);
     this.wrapperEl.addEventListener('touchmove', this.handleTouchMove);
@@ -85,7 +94,7 @@ export default class SliderUI {
   }
 
   next() {
-    if (this.index < (this.slidesCount / this.slidesPerGroup) - 1) {
+    if (this.index < this.maxIndex) {
       this.index += 1;
     }
 
@@ -101,8 +110,35 @@ export default class SliderUI {
   }
 
   slide() {
-    this.translateX = -this.widthPerSlide * this.slidesPerGroup * this.index;
+    // スライドのwidthが100で、一回スライドでスライドする数が3でindexが1の場合
+    // -100 * 3 * 1 = -300
+    // -300pxスライドする
+    const translateX = -this.widthPerSlide * this.slidesPerGroup * this.index;
 
+    if (this.index === 0) {
+      this.translateX = 0;
+    }
+
+    // 両隣のスライドをはみ出して表示させたいため少しずらす
+    if (this.index > 0 && this.index < this.maxIndex) {
+      this.translateX = translateX + (this.widthPerSlide / 4);
+    }
+
+    // スライドが最後の場合、最後のスライドを右端表示させたいため、位置をずらす
+    if (this.index === this.maxIndex) {
+      const slideCountDiff = (this.slidesPerGroup * (this.maxIndex + 1)) % this.slidesCount;
+
+      if (slideCountDiff === 0) {
+        this.translateX = translateX + (this.widthPerSlide / 2);
+      } else {
+        this.translateX = translateX + (this.widthPerSlide * slideCountDiff) + (this.widthPerSlide / 2);
+      }
+    }
+
+    this.toTranslateX();
+  }
+
+  toTranslateX() {
     this.wrapperEl.style.webkitTransform = `translateX(${ this.translateX }px)`;
     this.wrapperEl.style.transform = `translateX(${ this.translateX }px)`;
   }
@@ -122,8 +158,12 @@ export default class SliderUI {
       touches = event.touches[0];
     }
 
-    this.startX = this.currentX = (touches !== undefined) ? touches.pageX : event.clientX;
-    this.startY = this.currentY = (touches !== undefined) ? touches.pageY : event.clientY;
+    this.startX = this.currentX = (touches !== undefined)
+      ? touches.pageX
+      : event.clientX;
+    this.startY = this.currentY = (touches !== undefined)
+      ? touches.pageY
+      : event.clientY;
   }
 
   handleTouchMove(event) {
@@ -131,14 +171,20 @@ export default class SliderUI {
 
     let touches;
 
-    touches = event !== undefined ? event.touches : null;
+    touches = event !== undefined
+      ? event.touches
+      : null;
 
     if (this.scrolling || touches && touches.length !== 1) {
       return;
     }
 
-    this.currentX = touches !== undefined ? touches[0].pageX : e.clientX;
-    this.currentY = touches !== undefined ? touches[0].pageY : e.clientY;
+    this.currentX = touches !== undefined
+      ? touches[0].pageX
+      : e.clientX;
+    this.currentY = touches !== undefined
+      ? touches[0].pageY
+      : e.clientY;
 
     let swipeLength;
     swipeLength = Math.round(Math.sqrt(
@@ -165,7 +211,7 @@ export default class SliderUI {
     this.translateX = this.lastTranslateX + this.offset;
     this.lastClientX = this.currentClientX;
 
-    // this.slide();
+    this.toTranslateX();
   }
 
   handleTouchEnd() {
